@@ -1,45 +1,22 @@
 const express = require("express");
-const fetch = require("node-fetch");
 const cors = require("cors");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
 const API_KEY = process.env.OPENAI_API_KEY;
 
-/* PARAPHRASER */
-app.post("/paraphrase", async (req, res) => {
-  try {
-    const { text } = req.body;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Rewrite clearly and naturally." },
-          { role: "user", content: text }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    res.json({ result: data.choices[0].message.content });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Health check
+app.get("/", (req, res) => {
+  res.send("API Running");
 });
 
-/* CAPTION */
+/* CAPTION GENERATOR */
 app.post("/caption", async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const prompt = req.body.prompt;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -50,20 +27,53 @@ app.post("/caption", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "Generate catchy captions." },
+          { role: "system", content: "You are a creative caption writer." },
           { role: "user", content: prompt }
         ]
       })
     });
 
     const data = await response.json();
-    res.json({ result: data.choices[0].message.content });
+
+    res.json({
+      result: data.choices?.[0]?.message?.content || "No result"
+    });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Caption API failed" });
   }
 });
 
-app.get("/", (req,res)=>res.send("API Running"));
+/* PARAPHRASER */
+app.post("/paraphrase", async (req, res) => {
+  try {
+    const text = req.body.text;
 
-app.listen(3000, ()=>console.log("Server running"));
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "Rewrite the sentence clearly and naturally." },
+          { role: "user", content: text }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    res.json({
+      result: data.choices?.[0]?.message?.content || "No result"
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Paraphrase API failed" });
+  }
+});
+
+const PORT = 3000;
+app.listen(PORT, () => console.log("Server running"));
