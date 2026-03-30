@@ -75,3 +75,8 @@ app.post("/caption", async (req, res) => {
     res.json({ result: "SERVER ERROR" });
   }
 });
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
