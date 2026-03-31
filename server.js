@@ -1,9 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -14,6 +12,7 @@ app.get("/", (req, res) => {
   res.send("API Running");
 });
 
+// PARAPHRASE
 app.post("/paraphrase", async (req, res) => {
   try {
     const text = req.body.text;
@@ -21,11 +20,11 @@ app.post("/paraphrase", async (req, res) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",   // 🔥 UPDATED MODEL
         messages: [
           { role: "user", content: "Rewrite this sentence properly: " + text }
         ]
@@ -34,7 +33,11 @@ app.post("/paraphrase", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("PARAPHRASE RESPONSE:", data); // 🔥 debug
+    console.log("PARA RESPONSE:", data);
+
+    if (data.error) {
+      return res.json({ result: "API ERROR: " + data.error.message });
+    }
 
     res.json({
       result: data.choices?.[0]?.message?.content || "No result"
@@ -45,6 +48,8 @@ app.post("/paraphrase", async (req, res) => {
     res.json({ result: "SERVER ERROR" });
   }
 });
+
+// CAPTION
 app.post("/caption", async (req, res) => {
   try {
     const prompt = req.body.prompt;
@@ -52,11 +57,11 @@ app.post("/caption", async (req, res) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",   // 🔥 UPDATED MODEL
         messages: [
           { role: "user", content: "Write a catchy caption: " + prompt }
         ]
@@ -65,7 +70,11 @@ app.post("/caption", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("CAPTION RESPONSE:", data); // 🔥 debug
+    console.log("CAPTION RESPONSE:", data);
+
+    if (data.error) {
+      return res.json({ result: "API ERROR: " + data.error.message });
+    }
 
     res.json({
       result: data.choices?.[0]?.message?.content || "No result"
@@ -76,6 +85,7 @@ app.post("/caption", async (req, res) => {
     res.json({ result: "SERVER ERROR" });
   }
 });
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
